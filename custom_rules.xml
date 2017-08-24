@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="custom_rules">
+	<property name="dex.file2.name" value="classes2.dex" />
+	<property name="jar.libs2.dir" value="libs2" />
+	<property name="debug.key.store" value="C:\Users\Administrator\.android\debug.keystore" />
+	<property name="debug.key.store.alias" value="androiddebugkey" />
+	<property name="debug.key.store.password" value="android" />
+	<target name="-package-second-lib">
+		<dex executable="${dx}"
+                    output="${dex.file2.name}"
+                    dexedlibs="${out.dexed.absolute.dir}"
+                    nolocals="@{nolocals}"
+                    forceJumbo="${dex.force.jumbo}"
+                    disableDexMerger="${dex.disable.merger}"
+                    verbose="${verbose}">
+                <path path="${jar.libs2.dir}"/>
+            </dex>
+	</target>
+	<target name="-add-dex" depends="-package-second-lib">
+		<echo>-add-dex</echo>
+		<exec
+            executable="${aapt}"
+            failonerror="true" >
+            <arg value="add" />
+            <arg value="${out.packaged.file}" />
+            <arg value="${dex.file2.name}" />
+        </exec>
+        <delete file="${dex.file2.name}"/>
+        <delete file="${dex.file2.name}.d"/>
+	</target>
+
+     <target name="-debug-sign">
+        <!-- only create apk if *not* a library project -->
+        <do-only-if-not-library elseText="Library project: do not create apk..." >
+            <sequential>
+                <!-- Signs the APK -->
+                <echo level="info">Signing final apk...${out.packaged.file}</echo>
+                <property name="out.resign.file" location="${out.absolute.dir}/${ant.project.name}-debug-unaligned-resign.apk" />
+                <signapk
+                        input="${out.packaged.file}"
+                        output="${out.resign.file}"
+                        keystore="${debug.key.store}"
+                        storepass="${debug.key.store.password}"
+                        alias="${debug.key.store.alias}"
+                        keypass="${debug.key.store.password}"/>
+
+                <!-- Zip aligns the APK -->
+                <zipalign-helper
+                        in.package="${out.resign.file}"
+                        out.package="${out.final.file}" />
+                <echo level="info">Release Package: ${out.final.file}</echo>
+            </sequential>
+        </do-only-if-not-library>
+        <record-build-info />
+    </target>
+
+    <target name="-post-package" depends="-add-dex" />
+    
+    <target name="debug" depends="-set-debug-files, -do-debug,-debug-sign, -post-build"
+                description="Builds the application and signs it with a debug key.">
+    </target>
+</project>

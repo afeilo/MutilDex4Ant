@@ -1,0 +1,6 @@
+# view AndroidManifest.xml #generated:10
+-keep class android.support.multidex.MultiDexApplication { <init>(...); }
+
+# view AndroidManifest.xml #generated:14
+-keep class main.Test { <init>(...); }
+
